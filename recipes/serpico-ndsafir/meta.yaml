@@ -1,0 +1,31 @@
+package:
+    name: ndsafir
+    version: "3.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/ndsafir.git
+  git_rev: v3.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - libtiff
+  host:
+    - libtiff
+  run:
+    - libtiff
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/ndsafir"                # [unix]
+    - if exist %PREFIX%\\bin\\ndsafir.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/ndsafir'
+  summary: 'Image denoising in 2D, 2D+t, 3D, 3D+t'
+  license: GPL3
+  
