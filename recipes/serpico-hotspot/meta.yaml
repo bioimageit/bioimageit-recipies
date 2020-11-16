@@ -1,0 +1,34 @@
+package:
+    name: hotspot
+    version: "1.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/hotspotdetection.git
+  git_rev: v1.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - libtiff
+    - libpng
+    - llvm-openmp
+  host:
+    - libtiff
+    - libpng
+  run:
+    - libtiff
+    - libpng
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/hotSpotDetection"                # [unix]
+    - if exist %PREFIX%\\bin\\hotSpotDetection.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/ndsafir'
+  summary: 'hot spot detection in microscopy images'
+  license: GPL3

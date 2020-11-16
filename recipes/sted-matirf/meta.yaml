@@ -1,0 +1,40 @@
+package:
+    name: matirf
+    version: "1.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/matirf.git
+  git_rev: v1.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - boost
+    - libtiff
+    - libpng
+    - fftw
+    - llvm-openmp
+  host:
+    - boost
+    - libtiff
+    - libpng
+    - fftw
+  run:
+    - boost
+    - libtiff
+    - libpng
+    - fftw
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/matirf"                # [unix]
+    - if exist %PREFIX%\\bin\\matirf.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/matirf'
+  summary: 'Multi Angle TIRF image reconstruction'
+  license: GPL3
