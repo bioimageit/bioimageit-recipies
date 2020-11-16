@@ -1,0 +1,31 @@
+package:
+    name: atlas
+    version: "1.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/atlas.git
+  git_rev: v1.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - libtiff
+    - llvm-openmp
+  host:
+    - libtiff
+  run:
+    - libtiff
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/atlas"                # [unix]
+    - if exist %PREFIX%\\bin\\atlas.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/ndsafir'
+  summary: 'Spot detection in 2D images'
+  license: GPL3
