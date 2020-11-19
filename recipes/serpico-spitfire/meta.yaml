@@ -1,0 +1,38 @@
+package:
+    name: spitfire
+    version: "1.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/spitfire.git
+  git_rev: v1.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - libtiff
+    - libfftw
+    - git
+    - llvm-openmp
+  host:
+    - libtiff
+    - libfftw
+  run:
+    - libtiff
+    - libfftw
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/sdeconv2d"                # [unix]
+    - "! test -d $PREFIX/bin/sdeconv3d"                # [unix]
+    - if exist %PREFIX%\\bin\\sdeconv2d.exe exit 1     # [win]
+    - if exist %PREFIX%\\bin\\sdeconv3d.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/spitfire'
+  summary: 'Image deconvolution 2D and 3F'
+  license: GPL3
+  
