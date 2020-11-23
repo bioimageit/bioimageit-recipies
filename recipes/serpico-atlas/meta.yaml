@@ -14,16 +14,19 @@ requirements:
     - {{ compiler('cxx') }}
     - cmake
     - libtiff
+    - gsl
     - llvm-openmp
   host:
+    - gsl
     - libtiff
   run:
+    - gsl
     - libtiff
   
 test:
   commands:
     - "! test -d $PREFIX/bin/atlas"                # [unix]
-    - if exist %PREFIX%\\bin\\atlas.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\atlas.exe exit 1     # [win]
   
 about:
   home: 'https://gitlab.inria.fr/serpico/ndsafir'

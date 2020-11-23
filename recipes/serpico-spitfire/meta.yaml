@@ -28,8 +28,8 @@ test:
   commands:
     - "! test -d $PREFIX/bin/sdeconv2d"                # [unix]
     - "! test -d $PREFIX/bin/sdeconv3d"                # [unix]
-    - if exist %PREFIX%\\bin\\sdeconv2d.exe exit 1     # [win]
-    - if exist %PREFIX%\\bin\\sdeconv3d.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\sdeconv2d.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\sdeconv3d.exe exit 1     # [win]
   
 about:
   home: 'https://gitlab.inria.fr/serpico/spitfire'

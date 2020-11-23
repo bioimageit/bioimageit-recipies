@@ -33,7 +33,7 @@ requirements:
 test:
   commands:
     - "! test -d $PREFIX/bin/denoise"                # [unix]
-    - if exist %PREFIX%\\bin\\denoise.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\denoise.exe exit 1     # [win]
   
 about:
   home: 'https://gitlab.inria.fr/serpico/cimgdenoising'

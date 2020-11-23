@@ -23,7 +23,7 @@ requirements:
 test:
   commands:
     - "! test -d $PREFIX/bin/ndsafir"                # [unix]
-    - if exist %PREFIX%\\bin\\ndsafir.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\ndsafir.exe exit 1     # [win]
   
 about:
   home: 'https://gitlab.inria.fr/serpico/ndsafir'

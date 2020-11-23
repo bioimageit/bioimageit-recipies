@@ -32,7 +32,7 @@ requirements:
 test:
   commands:
     - "! test -d $PREFIX/bin/matirf"                # [unix]
-    - if exist %PREFIX%\\bin\\matirf.exe exit 1     # [win]
+    - if not exist %PREFIX%\\bin\\matirf.exe exit 1     # [win]
   
 about:
   home: 'https://gitlab.inria.fr/serpico/matirf'
