@@ -14,15 +14,15 @@ requirements:
     - {{ compiler('cxx') }}
     - cmake
     - libtiff
-    - libfftw
+    - fftw
     - git
     - llvm-openmp
   host:
     - libtiff
-    - libfftw
+    - fftw
   run:
     - libtiff
-    - libfftw
+    - fftw
   
 test:
   commands:
@@ -33,6 +33,6 @@ test:
   
 about:
   home: 'https://gitlab.inria.fr/serpico/spitfire'
-  summary: 'Image deconvolution 2D and 3F'
+  summary: 'Image deconvolution 2D and 3D'
   license: GPL3
   

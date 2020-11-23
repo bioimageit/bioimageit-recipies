@@ -1,0 +1,41 @@
+package:
+    name: cimgdenoising
+    version: "1.0.0"
+  
+source:
+  git_url: https://gitlab.inria.fr/serpico/cimgdenoising.git
+  git_rev: v1.0.0
+  
+build:
+  number: 1
+  
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - libjpeg-turbo
+    - libpng
+    - libtiff
+    - fftw
+    - git
+    - llvm-openmp
+  host:
+    - libjpeg-turbo
+    - libpng
+    - libtiff
+    - fftw
+  run:
+    - libjpeg-turbo
+    - libpng
+    - libtiff
+    - fftw
+  
+test:
+  commands:
+    - "! test -d $PREFIX/bin/denoise"                # [unix]
+    - if exist %PREFIX%\\bin\\denoise.exe exit 1     # [win]
+  
+about:
+  home: 'https://gitlab.inria.fr/serpico/cimgdenoising'
+  summary: 'Image denoising (13 methods)'
+  license: GPL3
