@@ -1,26 +1,23 @@
 package:
-    name: noise2void
+    name: juglab-noise2void
     version: "0.3.1"
   
 source:
   git_url: https://github.com/juglab/n2v.git
   git_rev: v0.3.1
   
-build:
-  number: 1
-  
 requirements:
   build:
-    - tensorflow-gpu
-    - keras
+    - python
+
+  run :
     - python
   
 test:
-  commands:
-    - "! test python -d $PREFIX/tests/functional/test_prediction2D_RGB.py"                # [python]
+  imports :
+    - os                # [python]
   
 about:
   home: 'https://github.com/juglab/n2v'
   summary: 'Noise2Void - Learning Denoising from Single Noisy Images'
-  license: GPL3
   
