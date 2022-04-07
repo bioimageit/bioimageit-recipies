@@ -15,7 +15,8 @@ requirements:
     - cmake
     - libtiff
     - gsl
-    - llvm-openmp
+    - llvm-openmp # [osx]
+    - llvm-openmp # [win]
   host:
     - gsl
     - libtiff
