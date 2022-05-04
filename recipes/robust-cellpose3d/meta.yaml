@@ -1,5 +1,5 @@
 package:
-  name: robust-cellpose3d
+  name: robust_cellpose3d
   version: 1.0
 source:
   git_url: https://github.com/bioimageit/Cellpose3D
