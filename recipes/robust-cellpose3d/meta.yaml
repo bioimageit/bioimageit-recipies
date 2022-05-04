@@ -1,5 +1,5 @@
 package:
-  name: cellpose3D
+  name: cellpose3d_py
   version: 1.0
 source:
   git_url: https://github.com/bioimageit/Cellpose3D
