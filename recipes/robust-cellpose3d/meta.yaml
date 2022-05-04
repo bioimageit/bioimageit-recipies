@@ -1,0 +1,26 @@
+package:
+  name: robust-cellpose3d
+  version: 1.0
+source:
+  git_url: https://github.com/bioimageit/Cellpose3D
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+requirements:
+  host:
+    - python >=3.6
+    - pip
+    - setuptools
+  build:
+    - pytorch
+    - cudatoolkit
+    - setuptools
+  run:
+    - python >=3.6
+    - setuptools
+    - pytorch
+    - cudatoolkit
+about:
+  home: https://github.com/stegmaierj/Cellpose3D
+  summary: This repository contains code used for the 3D Cellpose approach proposed in Preprint, which is an extension of the approach proposed by Stringer et al..
