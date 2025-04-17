@@ -30,6 +30,6 @@ test:
     - if not exist %PREFIX%\\bin\\atlas.exe exit 1     # [win]
   
 about:
-  home: 'https://gitlab.inria.fr/serpico/ndsafir'
+  home: 'https://gitlab.inria.fr/serpico/atlas'
   summary: 'Spot detection in 2D images'
   license: GPL3

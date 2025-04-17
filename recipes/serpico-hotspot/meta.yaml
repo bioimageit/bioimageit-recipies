@@ -29,6 +29,6 @@ test:
     - if not exist %PREFIX%\\bin\\hotSpotDetection.exe exit 1     # [win]
   
 about:
-  home: 'https://gitlab.inria.fr/serpico/ndsafir'
+  home: 'https://gitlab.inria.fr/serpico/hotspotdetection'
   summary: 'hot spot detection in microscopy images'
   license: GPL3

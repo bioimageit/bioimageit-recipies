@@ -1,0 +1,4 @@
+pin_compatible:
+  gsl:
+    min_pin: 2.7
+    max_pin: 2.8
