@@ -13,15 +13,18 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - cmake
+    - libpng
     - libtiff
     - gsl
     - llvm-openmp # [osx]
     - llvm-openmp # [win]
   host:
     - gsl
+    - libpng
     - libtiff
   run:
     - gsl
+    - libpng
     - libtiff
   
 test:
