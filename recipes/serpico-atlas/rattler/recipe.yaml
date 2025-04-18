@@ -1,0 +1,98 @@
+context:
+  name: atlas
+  version: 1.0.2
+
+package:
+  name: ${{ name|lower }}
+  version: ${{ version }}
+
+source:
+  url: https://gitlab.inria.fr/serpico/atlas/-/archive/v1.0.2/atlas-v1.0.2.zip
+  sha256: a4ba80004a3300133a98bda45197b35303a8bdec52e7a424cb66482437e8d113
+
+build:
+  number: 1 # From meta.yaml
+  script:
+    # Common build directory setup
+    - mkdir build
+    - cd build
+
+    # Platform-specific build steps
+    - if: win
+      then: |
+        # Configure using Ninja, specifying install prefix and build type
+        cmake .. -G "Ninja" -DCMAKE_INSTALL_PREFIX="%PREFIX%" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_PREFIX_PATH="%PREFIX%"
+        # Build
+        ninja
+        # Go back to source directory for copying
+        cd ..
+        # Create bin directory in target prefix
+        mkdir %PREFIX%\bin
+        # Manually copy executables as done in original recipe
+        copy build\Release\atlas.exe %PREFIX%\bin\atlas.exe
+        copy build\Release\blobsref.exe %PREFIX%\bin\blobsref.exe
+        # This command was present in the original bld.bat. Its purpose during build is unclear.
+        # It might be a post-build check or necessary initialization step.
+        # Consider moving to tests if it's just a check.
+        # %PREFIX%\bin\blobsref.exe
+    - if: unix
+      then: |
+        # Configure using Ninja, passing standard CMake args, prefix, and build type
+        cmake .. ${CMAKE_ARGS} -G "Ninja" -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib
+        # Build
+        ninja
+        # Go back to source directory for copying
+        cd ..
+        # Create bin directory in target prefix
+        mkdir -p $PREFIX/bin
+        # Manually copy executables as done in original recipe
+        cp build/atlas $PREFIX/bin/atlas
+        cp build/blobsref $PREFIX/bin/blobsref
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - cmake
+    - ninja  # Added because we use the Ninja generator
+    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
+    - libtiff
+    - if: osx
+      then: llvm-openmp # Match [osx] selector
+    - if: win
+      then: llvm-openmp # Match [win] selector
+  host:
+    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
+    - libtiff
+    - zlib
+    - libpng
+  run:
+    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
+    - libtiff
+    - zlib
+    - libpng
+    
+tests:
+  - script:
+      # Check if the main executable exists and runs (e.g., shows help)
+      - if: unix
+        then: test -f $PREFIX/bin/atlas && atlas --help
+      - if: win
+        then: if not exist %PREFIX%\bin\atlas.exe exit 1 && atlas --help
+      # Check if the second executable exists and runs
+      - if: unix
+        then: test -f $PREFIX/bin/blobsref && blobsref --help # Assuming it also has --help
+      - if: win
+        then: if not exist %PREFIX%\bin\blobsref.exe exit 1 && blobsref --help
+
+about:
+  homepage: https://gitlab.inria.fr/serpico/atlas
+  summary: Spot detection in 2D images
+  license: GPL-3.0-only # Use SPDX identifier for GPL3
+  # license_file: LICENSE # Uncomment if a LICENSE file exists in the source repo root
+  # description: # Add if you want a more detailed description
+  # documentation: # Add if available
+  # repository: # Add if different from homepage
+
+extra:
+  recipe-maintainers:
+    - your-github-handle # Add maintainer GitHub handle(s)
