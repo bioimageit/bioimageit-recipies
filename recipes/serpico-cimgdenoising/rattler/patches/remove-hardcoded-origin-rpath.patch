@@ -1,0 +1,45 @@
+diff --git a/cmake/FindCIMG.cmake b/cmake/FindCIMG.cmake
+index b1d8c74..bfa382c 100644
+--- a/cmake/FindCIMG.cmake
++++ b/cmake/FindCIMG.cmake
+@@ -174,6 +174,11 @@ find_package (OpenMP QUIET)
+ if (OPENMP_FOUND)
+     set (CIMG_C_FLAGS "${CIMG_C_FLAGS}  ${OpenMP_C_FLAGS}")
+     set (CIMG_CXX_FLAGS "${CIMG_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
++    if(TARGET OpenMP::OpenMP_CXX)
++        set (CIMG_LIBRARIES ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX)
++    else()
++        set (CIMG_LIBRARIES ${CIMG_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
++    endif()
+     set (CIMG_DEFINITIONS ${CIMG_DEFINITIONS} -Dcimg_use_openmp)    
+ 
+     # A specific flag needs to be enabled in order to compile omp programs with xcode
+@@ -266,4 +271,3 @@ set (CIMG_C_FLAGS ${CIMG_C_FLAGS}  CACHE STRING "c flags for cimg")
+ set (CIMG_CXX_FLAGS ${CIMG_CXX_FLAGS} CACHE STRING "c++ flags for cimg")
+ 
+ 
+-
+diff --git a/cmake/cimgdenoisingBuild.cmake b/cmake/cimgdenoisingBuild.cmake
+index a304c70..83bdf6b 100755
+--- a/cmake/cimgdenoisingBuild.cmake
++++ b/cmake/cimgdenoisingBuild.cmake
+@@ -25,13 +25,16 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
+ ## 
+ ## #################################################################
+ 
+-set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
++if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
++  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
++endif()
+ 
+ set(CMAKE_COLOR_MAKEFILE ON)
+ set(CMAKE_VERBOSE_MAKEFILE OFF)
+ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+-SET(CMAKE_EXE_LINKER_FLAGS
+-          "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,$ORIGIN")
++if(UNIX AND NOT APPLE)
++  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
++endif()
+ 
+ ## #################################################################
+ ## Configure path

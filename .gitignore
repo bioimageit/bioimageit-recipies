@@ -1,6 +1,7 @@
 .DS_Store
 .worktrees/
 sources/
+simglib-recipes/
 output/
 **/output/
 progress_log_*.md

@@ -1,0 +1,320 @@
+diff --git a/cmake/simglibBuild.cmake b/cmake/simglibBuild.cmake
+index 1331d9a..98e1838 100755
+--- a/cmake/simglibBuild.cmake
++++ b/cmake/simglibBuild.cmake
+@@ -25,13 +25,18 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
+ ## 
+ ## #################################################################
+ 
+-set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
++if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
++  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
++endif()
+ 
+ set(CMAKE_COLOR_MAKEFILE ON)
+ set(CMAKE_VERBOSE_MAKEFILE OFF)
+ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+-SET(CMAKE_EXE_LINKER_FLAGS
+-          "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,$ORIGIN")
++if(UNIX AND NOT APPLE)
++  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib;$ORIGIN")
++  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
++  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
++endif()
+ 
+ ## #################################################################
+ ## Configure path
+@@ -40,6 +45,11 @@ SET(CMAKE_EXE_LINKER_FLAGS
+ include_directories(${PROJECT_SOURCE_DIR}/include)
+ include_directories(${PROJECT_SOURCE_DIR}/src)
+ include_directories(${PROJECT_BINARY_DIR})
++foreach(_simglib_module
++    scli score sdata sdataio sdeconv sdenoise sfft sfiltering simage simageio smanipulate smeasuring soperate spadding sroi sshape
++)
++  include_directories(${PROJECT_BINARY_DIR}/src/${_simglib_module})
++endforeach()
+ 
+ set(${PROJECT_NAME}_ARCHIVE_OUTPUT_DIRECTORY lib)
+ set(${PROJECT_NAME}_RUNTIME_OUTPUT_DIRECTORY bin)
+diff --git a/cmake/simglibDependencies.cmake b/cmake/simglibDependencies.cmake
+index 1dac9f3..6e2ff21 100755
+--- a/cmake/simglibDependencies.cmake
++++ b/cmake/simglibDependencies.cmake
+@@ -19,6 +19,7 @@ endif(${DOXYGEN_FOUND})
+ 
+ if(${SL_USE_OPENMP})
+   find_package(OpenMP REQUIRED)
++  list(APPEND SL_LIBRARIES OpenMP::OpenMP_CXX)
+ endif(${SL_USE_OPENMP})  
+ 
+ ## #################################################################
+@@ -44,8 +45,12 @@ if(simglib_BUILD_TOOLS)
+ ## #################################################################
+ find_package (TIFF REQUIRED)
+ if (TIFF_FOUND)
+-  set (SL_INCLUDE_DIRS ${SL_INCLUDE_DIRS} ${TIFF_INCLUDE_DIR})
+-  set (SL_LIBRARIES ${SL_LIBRARIES} ${TIFF_LIBRARIES}) 
++  if(TARGET TIFF::TIFF)
++    set (SL_LIBRARIES ${SL_LIBRARIES} TIFF::TIFF)
++  else()
++    set (SL_INCLUDE_DIRS ${SL_INCLUDE_DIRS} ${TIFF_INCLUDE_DIRS})
++    set (SL_LIBRARIES ${SL_LIBRARIES} ${TIFF_LIBRARIES})
++  endif()
+   message(STATUS "TIFF found")
+ else (TIFF_FOUND)
+   message(STATUS "TIFF NOT found.")
+@@ -63,13 +68,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SL_CXX_FLAGS}")
+ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+ 
+ 
+-if(${SL_USE_OPENMP})
+-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fopenmp")
+-endif(${SL_USE_OPENMP})  
+-
+ #set (SL_LIBRARIES ${SL_LIBRARIES} m) 
+ set (SL_INCLUDE_DIRS ${SL_INCLUDE_DIRS} CACHE STRING "include directories for spartion dependancies")
+ set (SL_LIBRARIES ${SL_LIBRARIES} CACHE STRING "spartion required and optional 3rd party libraries")
+ set (SL_DEFINITIONS ${SL_DEFINITIONS} CACHE STRING "SL_USE_XXX defines")
+ set (SL_C_FLAGS ${SL_C_FLAGS}  CACHE STRING "c flags for cimg")
+-set (SL_CXX_FLAGS ${SL_CXX_FLAGS} CACHE STRING "c++ flags for cimg")
+\ No newline at end of file
++set (SL_CXX_FLAGS ${SL_CXX_FLAGS} CACHE STRING "c++ flags for cimg")
+diff --git a/src/scli/CMakeLists.txt b/src/scli/CMakeLists.txt
+index 2268e4c..b6e527a 100755
+--- a/src/scli/CMakeLists.txt
++++ b/src/scli/CMakeLists.txt
+@@ -51,7 +51,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ ## #################################################################
+ ## Export header file
+ ## #################################################################
+diff --git a/src/score/CMakeLists.txt b/src/score/CMakeLists.txt
+index 2f28f93..8669022 100644
+--- a/src/score/CMakeLists.txt
++++ b/src/score/CMakeLists.txt
+@@ -61,7 +61,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/score/SPath.cpp b/src/score/SPath.cpp
+index 806150e..87591e3 100644
+--- a/src/score/SPath.cpp
++++ b/src/score/SPath.cpp
+@@ -37,7 +37,7 @@ bool SPath::isPath(std::string path)
+ #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+     std::string slash="\\";
+ #else
+-    std:string slash="/";
++    std::string slash="/";
+ #endif
+     if (path.find(slash) != std::string::npos) 
+     {
+@@ -51,7 +51,7 @@ std::string SPath::join(std::string path, std::string filename)
+ #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+     std::string slash="\\";
+ #else
+-    std:string slash="/";
++    std::string slash="/";
+ #endif  
+ 
+     if ( SStringOp::endsWith(path, slash) )
+@@ -69,7 +69,7 @@ std::string SPath::relativeToFilename(std::string filename, std::string referenc
+ #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+     std::string slash="\\";
+ #else
+-    std:string slash="/";
++    std::string slash="/";
+ #endif 
+ 
+     if (SFile::exists(filename))
+diff --git a/src/sdata/CMakeLists.txt b/src/sdata/CMakeLists.txt
+index d25cfc5..4a68c40 100755
+--- a/src/sdata/CMakeLists.txt
++++ b/src/sdata/CMakeLists.txt
+@@ -55,7 +55,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ ## #################################################################
+ ## Export header file
+ ## #################################################################
+diff --git a/src/sdataio/CMakeLists.txt b/src/sdataio/CMakeLists.txt
+index 85f12a0..9eda24f 100755
+--- a/src/sdataio/CMakeLists.txt
++++ b/src/sdataio/CMakeLists.txt
+@@ -38,7 +38,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ ## #################################################################
+ ## Export header file
+ ## #################################################################
+diff --git a/src/sdeconv/CMakeLists.txt b/src/sdeconv/CMakeLists.txt
+index 4128057..e5c9a17 100644
+--- a/src/sdeconv/CMakeLists.txt
++++ b/src/sdeconv/CMakeLists.txt
+@@ -48,7 +48,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/sdenoise/CMakeLists.txt b/src/sdenoise/CMakeLists.txt
+index 8643d87..4601388 100644
+--- a/src/sdenoise/CMakeLists.txt
++++ b/src/sdenoise/CMakeLists.txt
+@@ -40,7 +40,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/sfft/CMakeLists.txt b/src/sfft/CMakeLists.txt
+index 86e8562..f1aa7db 100755
+--- a/src/sfft/CMakeLists.txt
++++ b/src/sfft/CMakeLists.txt
+@@ -38,7 +38,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/sfiltering/CMakeLists.txt b/src/sfiltering/CMakeLists.txt
+index 4c8c5d4..954234e 100755
+--- a/src/sfiltering/CMakeLists.txt
++++ b/src/sfiltering/CMakeLists.txt
+@@ -50,7 +50,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/simage/CMakeLists.txt b/src/simage/CMakeLists.txt
+index 62f1a26..b37c2c0 100755
+--- a/src/simage/CMakeLists.txt
++++ b/src/simage/CMakeLists.txt
+@@ -58,7 +58,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/simageio/CMakeLists.txt b/src/simageio/CMakeLists.txt
+index 7af49f2..6729e92 100755
+--- a/src/simageio/CMakeLists.txt
++++ b/src/simageio/CMakeLists.txt
+@@ -45,7 +45,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/smanipulate/CMakeLists.txt b/src/smanipulate/CMakeLists.txt
+index 4f93204..15cf9dd 100644
+--- a/src/smanipulate/CMakeLists.txt
++++ b/src/smanipulate/CMakeLists.txt
+@@ -52,7 +52,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/smeasuring/CMakeLists.txt b/src/smeasuring/CMakeLists.txt
+index e3e3bc6..f6029e7 100644
+--- a/src/smeasuring/CMakeLists.txt
++++ b/src/smeasuring/CMakeLists.txt
+@@ -36,7 +36,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/soperate/CMakeLists.txt b/src/soperate/CMakeLists.txt
+index 6b153bd..35d2508 100644
+--- a/src/soperate/CMakeLists.txt
++++ b/src/soperate/CMakeLists.txt
+@@ -40,7 +40,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/spadding/CMakeLists.txt b/src/spadding/CMakeLists.txt
+index d6b5bdf..b57e37d 100644
+--- a/src/spadding/CMakeLists.txt
++++ b/src/spadding/CMakeLists.txt
+@@ -36,7 +36,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/sroi/CMakeLists.txt b/src/sroi/CMakeLists.txt
+index 32e405d..41e3074 100755
+--- a/src/sroi/CMakeLists.txt
++++ b/src/sroi/CMakeLists.txt
+@@ -48,7 +48,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file
+diff --git a/src/sshape/CMakeLists.txt b/src/sshape/CMakeLists.txt
+index 482e66f..26baa3c 100755
+--- a/src/sshape/CMakeLists.txt
++++ b/src/sshape/CMakeLists.txt
+@@ -38,7 +38,7 @@ INSTALL(TARGETS ${PROJECT_NAME}
+   ARCHIVE DESTINATION lib
+ )
+ install(FILES ${HEADERS_FILES} DESTINATION include/simglib/${PROJECT_NAME})
+-install(FILES ../../build/${PROJECT_NAME}Export.h DESTINATION include/simglib/${PROJECT_NAME})
++install(FILES "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Export.h" DESTINATION include/simglib/${PROJECT_NAME})
+ 
+ ## #################################################################
+ ## Export header file

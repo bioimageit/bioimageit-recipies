@@ -1,0 +1,89 @@
+context:
+  name: simglib
+  version: 0.1.2
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  url: https://github.com/sylvainprigent/simglib/archive/refs/tags/v${{ version }}.tar.gz
+  sha256: 87241e8159cfc98ad332f28c2a39e6d8cd986f2871c3fb4e035e11aa02549ccc
+  patches:
+    - patches/0001-fix-cross-platform-build.patch
+
+build:
+  number: 2
+  script:
+    - if: unix
+      then: |
+        cmake -S . -B build ${CMAKE_ARGS} -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=$PREFIX \
+          -DCMAKE_INSTALL_LIBDIR=lib \
+          -Dsimglib_BUILD_TOOLS=ON \
+          -Dsimglib_BUILD_TESTS=OFF \
+          -Dsimglib_BUILD_CUDA=OFF \
+          -DSL_USE_OPENMP=ON
+        cmake --build build --parallel ${CPU_COUNT}
+        cmake --install build
+    - if: win
+      then: |
+        cmake -S . -B build -G Ninja ^
+          -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
+          -DCMAKE_INSTALL_LIBDIR=lib ^
+          -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
+          -Dsimglib_BUILD_TOOLS=ON ^
+          -Dsimglib_BUILD_TESTS=OFF ^
+          -Dsimglib_BUILD_CUDA=OFF ^
+          -DSL_USE_OPENMP=OFF
+        cmake --build build --parallel %CPU_COUNT%
+        cmake --install build
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - cmake
+    - ninja
+  host:
+    - fftw
+    - libtiff
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
+  run:
+    - fftw
+    - libtiff
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
+
+tests:
+  - script:
+      - if: unix
+        then: |
+          test -x "$PREFIX/bin/simgspitfiredeconv2d"
+          test -x "$PREFIX/bin/simgspitfiredeconv3d"
+          test -x "$PREFIX/bin/simgmedian2d"
+          test -f "$PREFIX/include/simglib/score/scoreExport.h"
+          simgmedian2d --help > simgmedian2d-help.txt || test $? -eq 1
+          grep -q "USAGE" simgmedian2d-help.txt
+      - if: win
+        then: |
+          if not exist "%LIBRARY_PREFIX%\bin\simgspitfiredeconv2d.exe" exit 1
+          if not exist "%LIBRARY_PREFIX%\bin\simgspitfiredeconv3d.exe" exit 1
+          if not exist "%LIBRARY_PREFIX%\bin\simgmedian2d.exe" exit 1
+          if not exist "%LIBRARY_PREFIX%\include\simglib\score\scoreExport.h" exit 1
+          "%LIBRARY_PREFIX%\bin\simgmedian2d.exe" --help > simgmedian2d-help.txt
+          if errorlevel 2 exit 1
+          findstr /C:"USAGE" simgmedian2d-help.txt
+
+about:
+  homepage: https://github.com/sylvainprigent/simglib
+  repository: https://github.com/sylvainprigent/simglib
+  summary: Scientific multidimensional image processing library
+  license: GPL-3.0-only
+  license_file: LICENSE

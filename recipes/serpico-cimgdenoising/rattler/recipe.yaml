@@ -1,0 +1,81 @@
+context:
+  name: cimgdenoising
+  version: 1.0.0
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  url: https://gitlab.inria.fr/serpico/cimgdenoising/-/archive/v${{ version }}/cimgdenoising-v${{ version }}.tar.gz
+  sha256: 649479cc9a1661f1067bb751fa7d777710580b7037f382d4154a0344ef037c43
+  patches:
+    - patches/remove-hardcoded-origin-rpath.patch
+
+build:
+  number: 1
+  skip:
+    - target_platform != "linux-64" and target_platform != "osx-arm64"
+  script:
+    - if: unix
+      then: |
+        if [[ "$(uname)" == "Darwin" ]]; then
+          zlib_library="$(ls "${PREFIX}"/lib/libz.dylib "${PREFIX}"/lib/libz.*.dylib 2>/dev/null | head -n 1)"
+        else
+          zlib_library="$(ls "${PREFIX}"/lib/libz.so "${PREFIX}"/lib/libz.so.* 2>/dev/null | head -n 1)"
+        fi
+        test -n "${zlib_library}"
+        cmake -S . -B build ${CMAKE_ARGS} -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+          -DCMAKE_PREFIX_PATH="${PREFIX}" \
+          -DCMAKE_INCLUDE_PATH="${PREFIX}/include" \
+          -DCMAKE_LIBRARY_PATH="${PREFIX}/lib" \
+          -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
+          -DZLIB_ROOT="${PREFIX}" \
+          -DZLIB_INCLUDE_DIR="${PREFIX}/include" \
+          -DZLIB_LIBRARY="${zlib_library}" \
+          -Dcimgdenoising_BUILD_TESTS=OFF \
+          -DUSE_DISPLAY_LIBS=OFF
+        cmake --build build --parallel ${CPU_COUNT}
+        mkdir -p "${PREFIX}/bin"
+        cp build/bin/denoise "${PREFIX}/bin/denoise"
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+    - cmake
+    - ninja
+  host:
+    - fftw
+    - libjpeg-turbo
+    - libpng
+    - libtiff
+    - libzlib
+    - if: osx
+      then: llvm-openmp
+  run:
+    - fftw
+    - libjpeg-turbo
+    - libpng
+    - libtiff
+    - libzlib
+    - if: osx
+      then: llvm-openmp
+
+tests:
+  - script:
+      - if: unix
+        then: |
+          test -x "${PREFIX}/bin/denoise"
+          denoise --help
+          printf 'P2\n4 4\n255\n0 16 32 48\n64 80 96 112\n128 144 160 176\n192 208 224 255\n' > tiny.pgm
+          denoise -i tiny.pgm -o denoised.tif -algo Median -msg 1 -neigh 1
+          test -s denoised.tif
+
+about:
+  homepage: https://gitlab.inria.fr/serpico/cimgdenoising
+  summary: Image denoising command line tool with multiple 2D and 2D+T methods
+  license: GPL-3.0-only
+  license_file: LICENSE
