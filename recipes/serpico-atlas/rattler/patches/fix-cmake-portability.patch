@@ -1,0 +1,54 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 25cf5cf..c038a45 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -39,9 +39,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
+ ### Compilation
+ 
+ # default compilation is release
+-if (NOT CMAKE_BUILD_TYPE MATCHES DEBUG)
++if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE MATCHES DEBUG)
+     set (CMAKE_BUILD_TYPE "RELEASE")
+-endif (NOT CMAKE_BUILD_TYPE MATCHES DEBUG)
++endif ()
+ 
+ message ("")
+ message ("Configuring ${PROJECT_NAME} in ${CMAKE_BUILD_TYPE} mode")
+@@ -223,33 +223,32 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+ 
+ 
+ add_executable (blobsref src/blobsref.cpp src/core.cpp src/imgFilter.cpp src/fastcimg.cpp src/scalespace.cpp)
+-target_compile_options(blobsref PRIVATE -Xpreprocessor -fopenmp)
+ target_link_libraries (blobsref ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX  ${FFTW3_LIBRARY} ${FFTW3_THREADS_LIBRARY})
+ target_link_libraries (blobsref ${OTHER_3RDPARTY_LIBRARIES})
+ add_executable (atlas src/atlas.cpp src/core.cpp src/imgFilter.cpp src/fastcimg.cpp src/scalespace.cpp)
+-target_compile_options(atlas PRIVATE -Xpreprocessor -fopenmp)
+ target_link_libraries (atlas ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX  ${FFTW3_LIBRARY} ${FFTW3_THREADS_LIBRARY})
+ target_link_libraries (atlas ${OTHER_3RDPARTY_LIBRARIES})
+ 
+ add_executable (LoGfilter src/LoGfilter.cpp src/core.cpp src/imgFilter.cpp src/fastcimg.cpp)
+-target_compile_options(atlas PRIVATE -Xpreprocessor -fopenmp)
+ target_link_libraries (LoGfilter ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX  ${FFTW3_LIBRARY} ${FFTW3_THREADS_LIBRARY})
+ target_link_libraries (LoGfilter ${OTHER_3RDPARTY_LIBRARIES})
+ 
+ add_executable (eval src/performance.cpp src/evaluation.cpp)
+-target_compile_options(atlas PRIVATE -Xpreprocessor -fopenmp)
+ target_link_libraries (eval ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX  ${FFTW3_LIBRARY} ${FFTW3_THREADS_LIBRARY})
+ target_link_libraries (eval ${OTHER_3RDPARTY_LIBRARIES})
+ add_executable (benchmark src/benchmark.cpp src/evaluation.cpp src/core.cpp src/imgFilter.cpp src/fastcimg.cpp src/scalespace.cpp)
+-target_compile_options(atlas PRIVATE -Xpreprocessor -fopenmp)
+ target_link_libraries (benchmark ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX  ${FFTW3_LIBRARY} ${FFTW3_THREADS_LIBRARY})
+ target_link_libraries (benchmark ${OTHER_3RDPARTY_LIBRARIES})
+ 
++install(TARGETS atlas blobsref
++  RUNTIME DESTINATION bin
++)
+ 
+ 
+ 
+ 
+ 
++
+ #-----------------------------------------------------------------------------
+ ### Installation
+ 

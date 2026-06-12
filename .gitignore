@@ -1,1 +1,6 @@
 .DS_Store
+.worktrees/
+sources/
+output/
+**/output/
+progress_log_*.md

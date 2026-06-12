@@ -1,98 +1,87 @@
 context:
   name: atlas
-  version: 1.0.2
+  version: 1.0.3
 
 package:
-  name: ${{ name|lower }}
+  name: ${{ name }}
   version: ${{ version }}
 
 source:
-  url: https://gitlab.inria.fr/serpico/atlas/-/archive/v1.0.2/atlas-v1.0.2.zip
-  sha256: a4ba80004a3300133a98bda45197b35303a8bdec52e7a424cb66482437e8d113
+  url: https://gitlab.inria.fr/serpico/atlas/-/archive/v${{ version }}/atlas-v${{ version }}.zip
+  sha256: e06b3623c87ba691842d002f4848607a31fad6c8c02213ef4cd6f4cf0019bca9
+  patches:
+    - patches/fix-cmake-portability.patch
 
 build:
-  number: 1 # From meta.yaml
+  number: 2
+  skip:
+    - target_platform != "linux-64" and target_platform != "osx-arm64"
   script:
-    # Common build directory setup
-    - mkdir build
-    - cd build
-
-    # Platform-specific build steps
-    - if: win
-      then: |
-        # Configure using Ninja, specifying install prefix and build type
-        cmake .. -G "Ninja" -DCMAKE_INSTALL_PREFIX="%PREFIX%" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_PREFIX_PATH="%PREFIX%"
-        # Build
-        ninja
-        # Go back to source directory for copying
-        cd ..
-        # Create bin directory in target prefix
-        mkdir %PREFIX%\bin
-        # Manually copy executables as done in original recipe
-        copy build\Release\atlas.exe %PREFIX%\bin\atlas.exe
-        copy build\Release\blobsref.exe %PREFIX%\bin\blobsref.exe
-        # This command was present in the original bld.bat. Its purpose during build is unclear.
-        # It might be a post-build check or necessary initialization step.
-        # Consider moving to tests if it's just a check.
-        # %PREFIX%\bin\blobsref.exe
     - if: unix
       then: |
-        # Configure using Ninja, passing standard CMake args, prefix, and build type
-        cmake .. ${CMAKE_ARGS} -G "Ninja" -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib
-        # Build
-        ninja
-        # Go back to source directory for copying
-        cd ..
-        # Create bin directory in target prefix
-        mkdir -p $PREFIX/bin
-        # Manually copy executables as done in original recipe
-        cp build/atlas $PREFIX/bin/atlas
-        cp build/blobsref $PREFIX/bin/blobsref
+        if [[ "$(uname)" == "Darwin" ]]; then
+          zlib_library="$(ls "${PREFIX}"/lib/libz.dylib "${PREFIX}"/lib/libz.*.dylib 2>/dev/null | head -n 1)"
+        else
+          zlib_library="$(ls "${PREFIX}"/lib/libz.so "${PREFIX}"/lib/libz.so.* 2>/dev/null | head -n 1)"
+        fi
+        test -n "${zlib_library}"
+        cmake -S . -B build ${CMAKE_ARGS} -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+          -DCMAKE_INSTALL_LIBDIR=lib \
+          -DCMAKE_PREFIX_PATH="${PREFIX}" \
+          -DCMAKE_INCLUDE_PATH="${PREFIX}/include" \
+          -DCMAKE_LIBRARY_PATH="${PREFIX}/lib" \
+          -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
+          -DZLIB_ROOT="${PREFIX}" \
+          -DZLIB_INCLUDE_DIR="${PREFIX}/include" \
+          -DZLIB_LIBRARY="${zlib_library}" \
+          -DENABLE_OPENMP=ON \
+          -DUSE_DISPLAY_LIBS=OFF \
+          -DUSE_JPEG_LIBS=OFF \
+          -DUSE_PNG_LIBS=ON \
+          -DUSE_TIFF_LIBS=ON
+        cmake --build build --parallel ${CPU_COUNT}
+        cmake --install build
 
 requirements:
   build:
+    - ${{ compiler('c') }}
     - ${{ compiler('cxx') }}
     - cmake
-    - ninja  # Added because we use the Ninja generator
-    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
-    - libtiff
-    - if: osx
-      then: llvm-openmp # Match [osx] selector
-    - if: win
-      then: llvm-openmp # Match [win] selector
+    - ninja
   host:
-    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
+    - gsl
     - libtiff
-    - zlib
     - libpng
+    - libzlib
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
   run:
-    - gsl >=2.7,<2.8 # From conda_build_config.yaml pin_compatible
+    - gsl
     - libtiff
-    - zlib
     - libpng
-    
+    - libzlib
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
+
 tests:
   - script:
-      # Check if the main executable exists and runs (e.g., shows help)
       - if: unix
-        then: test -f $PREFIX/bin/atlas && atlas --help
-      - if: win
-        then: if not exist %PREFIX%\bin\atlas.exe exit 1 && atlas --help
-      # Check if the second executable exists and runs
-      - if: unix
-        then: test -f $PREFIX/bin/blobsref && blobsref --help # Assuming it also has --help
-      - if: win
-        then: if not exist %PREFIX%\bin\blobsref.exe exit 1 && blobsref --help
+        then: |
+          test -x "${PREFIX}/bin/atlas"
+          test -x "${PREFIX}/bin/blobsref"
+          atlas --help > atlas-help.txt 2>&1
+          grep -q "ATLAS is a spot detector" atlas-help.txt
+          blobsref --help > blobsref-help.txt 2>&1
+          grep -q "Count the number of blobs" blobsref-help.txt
 
 about:
   homepage: https://gitlab.inria.fr/serpico/atlas
   summary: Spot detection in 2D images
-  license: GPL-3.0-only # Use SPDX identifier for GPL3
-  # license_file: LICENSE # Uncomment if a LICENSE file exists in the source repo root
-  # description: # Add if you want a more detailed description
-  # documentation: # Add if available
-  # repository: # Add if different from homepage
-
-extra:
-  recipe-maintainers:
-    - your-github-handle # Add maintainer GitHub handle(s)
+  license: GPL-3.0-only
+  license_file: LICENSE
