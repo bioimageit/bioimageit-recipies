@@ -52,7 +52,9 @@ requirements:
     - libjpeg-turbo
     - libpng
     - libtiff
-    - libzlib
+    - zlib
+    - if: linux
+      then: libgomp
     - if: osx
       then: llvm-openmp
   run:
@@ -61,6 +63,8 @@ requirements:
     - libpng
     - libtiff
     - libzlib
+    - if: linux
+      then: libgomp
     - if: osx
       then: llvm-openmp
 
