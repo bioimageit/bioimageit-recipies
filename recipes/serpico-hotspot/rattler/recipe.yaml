@@ -36,6 +36,7 @@ build:
           -DCMAKE_BUILD_TYPE=Release ^
           -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
           -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
+          -DCMAKE_DISABLE_FIND_PACKAGE_OpenMP=TRUE ^
           -Dhotspotdetection_BUILD_TOOLS=ON ^
           -Dhotspotdetection_BUILD_TESTS=OFF ^
           -DUSE_DISPLAY_LIBS=OFF
