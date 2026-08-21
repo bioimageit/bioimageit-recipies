@@ -1,0 +1,88 @@
+context:
+  name: hotspot
+  version: 1.0.0
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  url: https://gitlab.inria.fr/serpico/hotspotdetection/-/archive/v${{ version }}/hotspotdetection-v${{ version }}.tar.gz
+  sha256: c26002d63797acf2b99e2b9e1c796e6d64c69fc5e11a7c7a6f1419ef232d7818
+  patches:
+    - patches/modern-cmake.patch
+
+build:
+  number: 2
+  script:
+    - if: unix
+      then: |
+        cmake -S . -B build ${CMAKE_ARGS} -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+          -DCMAKE_PREFIX_PATH="${PREFIX}" \
+          -DCMAKE_INCLUDE_PATH="${PREFIX}/include" \
+          -DCMAKE_LIBRARY_PATH="${PREFIX}/lib" \
+          -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
+          -Dhotspotdetection_BUILD_TOOLS=ON \
+          -Dhotspotdetection_BUILD_TESTS=OFF \
+          -DUSE_DISPLAY_LIBS=OFF
+        cmake --build build --parallel ${CPU_COUNT}
+        mkdir -p "${PREFIX}/bin"
+        cp build/bin/hotSpotDetection "${PREFIX}/bin/hotSpotDetection"
+    - if: win
+      then: |
+        cmake -S . -B build -G Ninja ^
+          -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
+          -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
+          -Dhotspotdetection_BUILD_TOOLS=ON ^
+          -Dhotspotdetection_BUILD_TESTS=OFF ^
+          -DUSE_DISPLAY_LIBS=OFF
+        cmake --build build --parallel %CPU_COUNT%
+        if not exist "%LIBRARY_PREFIX%\bin" mkdir "%LIBRARY_PREFIX%\bin"
+        copy build\bin\hotSpotDetection.exe "%LIBRARY_PREFIX%\bin\hotSpotDetection.exe"
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - cmake
+    - ninja
+  host:
+    - libpng
+    - libtiff
+    - zlib
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
+  run:
+    - libpng
+    - libtiff
+    - libzlib
+    - if: linux
+      then: libgomp
+    - if: osx
+      then: llvm-openmp
+
+tests:
+  - requirements:
+      run:
+        - python
+    script:
+      - hotSpotDetection -h
+      - python -c "from pathlib import Path; Path('tiny.pgm').write_text('P2\\n8 8\\n255\\n' + '0 0 0 0 0 0 0 0\\n' * 2 + '0 0 0 255 255 0 0 0\\n' * 2 + '0 0 0 0 0 0 0 0\\n' * 4, encoding='ascii')"
+      - hotSpotDetection -i tiny.pgm -o hotspot.tif -m 1 -n 2 -pv 0.5
+      - python -c "from pathlib import Path; output = Path('hotspot.tif'); assert output.is_file() and output.stat().st_size > 0"
+      - if: linux
+        then: |
+          ldd "${PREFIX}/bin/hotSpotDetection" > linkages.txt
+          ! grep -q "not found" linkages.txt
+          grep -q "libtiff.so.6" linkages.txt
+
+about:
+  homepage: https://gitlab.inria.fr/serpico/hotspotdetection
+  repository: https://gitlab.inria.fr/serpico/hotspotdetection
+  summary: Hotspot detection in fluorescence microscopy images
+  license: GPL-3.0-only
+  license_file: LICENSE
