@@ -69,11 +69,12 @@ requirements:
 tests:
   - requirements:
       run:
+        - pillow
         - python
     script:
       - hotSpotDetection -h
-      - python -c "from pathlib import Path; Path('tiny.pgm').write_text('P2\\n8 8\\n255\\n' + '0 0 0 0 0 0 0 0\\n' * 2 + '0 0 0 255 255 0 0 0\\n' * 2 + '0 0 0 0 0 0 0 0\\n' * 4, encoding='ascii')"
-      - hotSpotDetection -i tiny.pgm -o hotspot.tif -m 1 -n 2 -pv 0.5
+      - python -c "from PIL import Image; image = Image.new('L', (8, 8)); image.putpixel((3, 2), 255); image.putpixel((4, 2), 255); image.save('tiny.tif')"
+      - hotSpotDetection -i tiny.tif -o hotspot.tif -m 1 -n 2 -pv 0.5
       - python -c "from pathlib import Path; output = Path('hotspot.tif'); assert output.is_file() and output.stat().st_size > 0"
       - if: linux
         then: |
