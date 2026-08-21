@@ -23,3 +23,5 @@ index 36c0ca2..950bd59 100644
 +if(UNIX AND NOT APPLE)
 +  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
 +endif()
+@@ -39,0 +43 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
++include_directories(${PROJECT_SOURCE_DIR}/externals)
