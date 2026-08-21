@@ -1,0 +1,27 @@
+diff --git a/cmake/FindCIMG.cmake b/cmake/FindCIMG.cmake
+index 489eb4d..f4ca551 100644
+--- a/cmake/FindCIMG.cmake
++++ b/cmake/FindCIMG.cmake
+@@ -176,0 +177,5 @@
++    if(TARGET OpenMP::OpenMP_CXX)
++        set (CIMG_LIBRARIES ${CIMG_LIBRARIES} OpenMP::OpenMP_CXX)
++    else()
++        set (CIMG_LIBRARIES ${CIMG_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
++    endif()
+diff --git a/cmake/hotspotdetectionBuild.cmake b/cmake/hotspotdetectionBuild.cmake
+index 36c0ca2..950bd59 100644
+--- a/cmake/hotspotdetectionBuild.cmake
++++ b/cmake/hotspotdetectionBuild.cmake
+@@ -28 +28,3 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
+-set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
++if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
++  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
++endif()
+@@ -33,2 +35,3 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+-SET(CMAKE_EXE_LINKER_FLAGS
+-          "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,$ORIGIN")
++if(UNIX AND NOT APPLE)
++  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
++endif()
+@@ -39,0 +43 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
++include_directories(${PROJECT_SOURCE_DIR}/externals)

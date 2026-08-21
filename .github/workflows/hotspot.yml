@@ -1,0 +1,47 @@
+name: Hotspot package
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/hotspot.yml
+      - recipes/serpico-hotspot/**
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/hotspot.yml
+      - recipes/serpico-hotspot/**
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test (${{ matrix.target-platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target-platform: linux-64
+          - os: windows-latest
+            target-platform: win-64
+          - os: macos-15-intel
+            target-platform: osx-64
+          - os: macos-latest
+            target-platform: osx-arm64
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and test conda package
+        uses: prefix-dev/rattler-build-action@v0.2.39
+        with:
+          recipe-path: recipes/serpico-hotspot/rattler/recipe.yaml
+          artifact-name: hotspot-${{ matrix.target-platform }}
+          build-args: >-
+            --target-platform ${{ matrix.target-platform }}
+            --test native
+            -c bioimageit
+            -c conda-forge
